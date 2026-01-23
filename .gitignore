@@ -1,0 +1,41 @@
+# Claude Code
+.claude/
+.cache/
+# Private development (user-specific)
+aosong_*
+z_*
+o_*
+w_*
+# Training outputs
+logs/
+logs_slurm/
+wandb/
+checkpoints/
+*.out
+*.err
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
