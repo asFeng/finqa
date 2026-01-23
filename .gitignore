@@ -1,3 +1,7 @@
+launchers/fin_text_qa/run_qwen3_0.6b_fin_qa.sh
+launchers/fin_text_qa/run_qwen3_8b_fin_qa.sh
+launchers/fin_text_qa/slurm
+
 # Claude Code
 .claude/
 .cache/
