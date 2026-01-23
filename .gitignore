@@ -1,6 +1,7 @@
 # Claude Code
 .claude/
 .cache/
+.data/
 # Private development (user-specific)
 aosong_*
 z_*
