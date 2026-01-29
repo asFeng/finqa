@@ -37,6 +37,8 @@ fi
 BASE_DIR="/mnt_out/asfeng/fin_w4"
 VERL_DIR="$BASE_DIR/verl"
 OUTPUT_DIR="/checkpoints/${EXP_NAME}"
+VAL_DATA_DIR="/val/${EXP_NAME}"
+ROLLOUT_DATA_DIR="/rollout/${EXP_NAME}"
 
 # Reward functions are in parent directory
 REWARD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -81,6 +83,8 @@ LEARNING_RATE=${LR:-1e-6}
 KL_LOSS_COEF=${KL_COEF:-0.001}
 
 mkdir -p "$OUTPUT_DIR"
+mkdir -p "$VAL_DATA_DIR"
+mkdir -p "$ROLLOUT_DATA_DIR"
 
 echo "=============================================="
 echo " Financial QA RL Training - Qwen3-4B"
@@ -146,6 +150,9 @@ python3 -m verl.trainer.main_ppo \
     trainer.val_before_train=True \
     trainer.total_epochs=$TOTAL_EPOCHS \
     trainer.default_local_dir="$OUTPUT_DIR" \
+    trainer.validation_data_dir="$VAL_DATA_DIR" \
+    trainer.rollout_data_dir="$ROLLOUT_DATA_DIR" \
+    trainer.resume_mode=disable \
     "$@"
 
 echo ""

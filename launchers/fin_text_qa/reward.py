@@ -48,6 +48,9 @@ def normalize_answer(s: str) -> str:
 
 def extract_solution(solution_str: str) -> str:
     """Extract answer from solution string, looking for <answer> tags first."""
+    # Remove <|endoftext|> token
+    solution_str = solution_str.replace("<|endoftext|>", "")
+
     # Try to extract from <answer> tags
     answer_pattern = r"<answer>(.*?)</answer>"
     matches = list(re.finditer(answer_pattern, solution_str, re.DOTALL))
@@ -216,6 +219,12 @@ def score_multi_signal_reasoning(predicted: str, ground_truth: str) -> float:
     """
     Score categorical/strategic answers with hierarchical scoring.
     """
+    # Try Yes/No extraction first (added for better yes-or-no judge)
+    pred_answer = extract_yes_no(predicted)
+    truth_answer = extract_yes_no(ground_truth)
+    if pred_answer is not None and truth_answer is not None:
+        return 1.0 if pred_answer == truth_answer else 0.0
+
     pred_normalized = normalize_answer(predicted)
     truth_normalized = normalize_answer(ground_truth)
 
@@ -288,11 +297,23 @@ def score_macro_fundamental(predicted: str, ground_truth: str) -> float:
     pred_answer = extract_yes_no(predicted)
     truth_answer = extract_yes_no(ground_truth)
 
-    if pred_answer is None or truth_answer is None:
-        return 0.0
-
-    # Base score for correct Yes/No
-    base_score = 0.7 if pred_answer == truth_answer else 0.0
+    # Handle cases where yes/no extraction fails - check for 'up'/'down' answers
+    base_score = 0.0
+    if truth_answer is None:
+        ground_truth_norm = normalize_answer(ground_truth)
+        if ground_truth_norm in ('up', 'down'):
+            pred_norm = normalize_answer(predicted)
+            if ground_truth_norm in pred_norm:
+                base_score = 0.7
+            else:
+                return 0.0
+        else:
+            return 0.0
+    else:
+        if pred_answer is None:
+            return 0.0
+        # Base score for correct Yes/No
+        base_score = 0.7 if pred_answer == truth_answer else 0.0
 
     # Bonus for reasoning quality (only if base answer is correct)
     if base_score > 0:

@@ -56,6 +56,9 @@ def extract_solution(solution_str: str) -> tuple[str, bool]:
     Extract answer from solution string, looking for <answer> tags first.
     Returns (answer, has_answer_tag).
     """
+    # Remove <|endoftext|> token
+    solution_str = solution_str.replace("<|endoftext|>", "")
+
     # Try to extract from <answer> tags
     answer_pattern = r"<answer>(.*?)</answer>"
     matches = list(re.finditer(answer_pattern, solution_str, re.DOTALL))
@@ -224,6 +227,14 @@ def score_multi_signal_reasoning(predicted: str, ground_truth: str) -> dict:
         'strategy_match': 0.0,
     }
 
+    # Try Yes/No extraction first (added for better yes-or-no judge)
+    pred_answer = extract_yes_no(predicted)
+    truth_answer = extract_yes_no(ground_truth)
+    if pred_answer is not None and truth_answer is not None:
+        result['score'] = 1.0 if pred_answer == truth_answer else 0.0
+        result['exact_match'] = 1.0 if pred_answer == truth_answer else 0.0
+        return result
+
     pred_normalized = normalize_answer(predicted)
     truth_normalized = normalize_answer(ground_truth)
 
@@ -300,15 +311,27 @@ def score_macro_fundamental(predicted: str, ground_truth: str) -> dict:
     pred_answer = extract_yes_no(predicted)
     truth_answer = extract_yes_no(ground_truth)
 
-    if pred_answer is None or truth_answer is None:
-        return result
-
-    # Base score for correct Yes/No
-    if pred_answer == truth_answer:
-        result['yes_no_correct'] = 1.0
-        base_score = 0.7
+    # Handle cases where yes/no extraction fails - check for 'up'/'down' answers
+    if truth_answer is None:
+        ground_truth_norm = normalize_answer(ground_truth)
+        if ground_truth_norm in ('up', 'down'):
+            pred_answer = normalize_answer(predicted)
+            if ground_truth_norm in pred_answer:
+                result['yes_no_correct'] = 1.0
+                base_score = 0.7
+            else:
+                return result
+        else:
+            return result
     else:
-        return result
+        if pred_answer is None:
+            return result
+        # Base score for correct Yes/No
+        if pred_answer == truth_answer:
+            result['yes_no_correct'] = 1.0
+            base_score = 0.7
+        else:
+            return result
 
     # Bonus for reasoning quality
     financial_terms = ['cpi', 'volatility', 'cash flow', 'sales', 'baseline',
